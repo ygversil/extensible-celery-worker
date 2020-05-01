@@ -24,6 +24,7 @@ setup(
 
     description="Python Celery worker whose registered task list can be extended with plugins",
     long_description=read("README.rst"),
+    long_description_content_type='text/x-rst',
 
     packages=find_packages(exclude=('tests',)),
 
