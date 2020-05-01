@@ -33,6 +33,13 @@ setup(
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'License :: OSI Approved :: MIT License',
+        'Environment :: No Input/Output (Daemon)',
+        'Environment :: Plugins',
+        'Intended Audience :: Developers',
+        'Operating System :: OS Independent',
+        'Topic :: System :: Distributed Computing',
+        'Topic :: Scientific/Engineering :: Information Analysis',
+        'Topic :: Software Development :: Libraries :: Python Modules',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
