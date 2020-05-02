@@ -60,7 +60,7 @@ def _celery_app_config(cli_config_path=None):
     On exit, it ensures that the config is cleared.
     """
     config = configparser.ConfigParser()
-    used_config_files = config.read(config_paths(cli_config_path))
+    used_config_files = config.read(path.as_posix() for path in config_paths(cli_config_path))
     logging.info('Found and used configuration files (in override order, next overrides previous): '
                  '{}'.format(', '.join(used_config_files)))
     yield config
