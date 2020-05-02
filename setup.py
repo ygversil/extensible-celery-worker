@@ -30,6 +30,7 @@ setup(
 
     install_requires=[
         'celery',
+        'stevedore',
     ],
 
     data_files=[
