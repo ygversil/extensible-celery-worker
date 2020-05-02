@@ -3,6 +3,7 @@
 
 from unittest.mock import patch
 import contextlib
+import pathlib
 import sys
 import unittest
 
@@ -88,6 +89,50 @@ class CeleryAppCliInitTest(unittest.TestCase):
         with patch.object(sys, 'argv', ['excewo', '-n', 'my_worker', '-l', 'DEBUG', '--', '-E']):
             main()
             self.mock_app_worker_main.assert_called_with(argv=['excewo', '-E', '-l', 'DEBUG'])
+
+
+class CeleryAppNameTest(unittest.TestCase):
+    """Specific test for the Celery application name."""
+
+    def setUp(self):
+        self.app = app
+        self.app.main = 'default_extensible_celery_worker_app'
+        self.app.add_defaults(DEFAULT_TEST_CONFIG)
+        # Patch app.worker_main() so that a worker is not really started
+        patcher = patch.object(app, 'worker_main')
+        self.mock_app_worker_main = patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_app_default_name(self):
+        """Check that the default name is used when no cli arg nor configuration file is given."""
+        with patch.object(sys, 'argv', ['excewo']):
+            main()
+            self.assertEqual(self.app.main, 'default_extensible_celery_worker_app')
+
+    def test_app_name_from_cli(self):
+        """Check that the application name is set to what is given by ``-n`` argument."""
+        cli_celery_app_name = 'my_worker'
+        with patch.object(sys, 'argv', ['excewo', '-n', cli_celery_app_name]):
+            main()
+            self.assertEqual(self.app.main, cli_celery_app_name)
+
+    def test_app_name_from_config(self):
+        """Check that the application name is set to what is given by configuration file."""
+        test_config_file_path = pathlib.Path(__file__).parent / 'data' / 'excewo.ini'
+        with patch.object(sys, 'argv', ['excewo', '-a', test_config_file_path.as_posix()]):
+            main()
+            self.assertEqual(self.app.main, 'test_worker')
+
+    def test_app_name_cl_wins(self):
+        """Check that the application name is set to what is provided by ``-n`` argument even if
+        configuration file is given."""
+        cli_celery_app_name = 'my_worker'
+        test_config_file_path = pathlib.Path(__file__).parent / 'data' / 'excewo.ini'
+        with patch.object(sys, 'argv', ['excewo',
+                                        '-n', cli_celery_app_name,
+                                        '-a', test_config_file_path.as_posix()]):
+            main()
+            self.assertEqual(self.app.main, cli_celery_app_name)
 
 
 @pytest.fixture(scope='class')

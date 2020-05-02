@@ -5,9 +5,11 @@
 
 from contextlib import contextmanager
 import argparse
+import configparser
 import logging
 
 from extensible_celery_worker import app
+from extensible_celery_worker.config_paths import config_paths
 
 
 _LOG_LEVEL_MAP = {
@@ -39,6 +41,8 @@ def _command_line_arguments():
     parser.add_argument('-n', '--app-name', help='Name that you give to the Celery application for '
                         'this worker. All tasks for this worker will be prefixed with this name',
                         dest='celery_app_name')
+    parser.add_argument('-a', '--app-config', help='Path to a configuration file for the Celery'
+                        'application (INI-style).', dest='cli_config_path')
     parser.add_argument('-l', '--log-level', help='Log level. The worker process will also use '
                         'this log level (no need to specify `-l` again after `--`)',
                         choices=_LOG_LEVEL_MAP.values(), action=_StoreLogLevelAction)
@@ -46,6 +50,21 @@ def _command_line_arguments():
                         'be passed to the Celery worker. Run `celery worker --help` for details',
                         nargs=argparse.REMAINDER)
     return parser.parse_args()
+
+
+@contextmanager
+def _celery_app_config(cli_config_path=None):
+    """Context manager that returns a ``ConfigParser`` instance after reading configuration from
+    all expected paths.
+
+    On exit, it ensures that the config is cleared.
+    """
+    config = configparser.ConfigParser()
+    used_config_files = config.read(config_paths(cli_config_path))
+    logging.info('Found and used configuration files (in override order, next overrides previous): '
+                 '{}'.format(', '.join(used_config_files)))
+    yield config
+    config.clear()
 
 
 @contextmanager
@@ -64,8 +83,10 @@ def _log_app(level):
 def start_celery_worker():
     """Start the application, that is start the Celery worker."""
     cli_args = _command_line_arguments()
-    with _log_app(cli_args.log_level):
-        celery_app_name = cli_args.celery_app_name
+    with _log_app(cli_args.log_level), \
+            _celery_app_config(cli_args.cli_config_path) as config:
+        celery_app_name = (cli_args.celery_app_name or
+                           config.get('excewo', 'celery_app_name', fallback=None))
         if celery_app_name:
             logging.debug('Setting Celery application name to "{}"'.format(celery_app_name))
             app.main = celery_app_name
