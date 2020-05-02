@@ -1,10 +1,13 @@
 """Tests for the Celery application."""
 
 
+from unittest.mock import patch
 import contextlib
+import sys
 import unittest
 
 from extensible_celery_worker import app
+from extensible_celery_worker.__main__ import main
 
 from celery.contrib.testing.app import DEFAULT_TEST_CONFIG
 # This is because there is an "assert tasks.ping in registered_tasks" in celery testing package
@@ -14,8 +17,8 @@ import pytest
 
 
 @pytest.mark.usefixtures('start_worker')
-class CeleryAppInitTest(unittest.TestCase):
-    """Test the Celery application initialization."""
+class CeleryAppDefaultInitTest(unittest.TestCase):
+    """Test the Celery application default initialization."""
 
     @classmethod
     def setUpClass(cls):
@@ -41,6 +44,43 @@ class CeleryAppInitTest(unittest.TestCase):
             with self.subTest(msg='Check that Celery worker startup message contains '
                               '"{}".'.format(expected_string)):
                 self.assertIn(expected_string, startup_msg)
+
+
+class CeleryAppCliInitTest(unittest.TestCase):
+    """Test the Celery application initialization from excewo script."""
+
+    def setUp(self):
+        self.app = app
+        self.app.add_defaults(DEFAULT_TEST_CONFIG)
+        # Patch app.worker_main() so that a worker is not really started
+        patcher = patch.object(app, 'worker_main')
+        self.mock_app_worker_main = patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_app_default_name(self):
+        """Check that the Celery application name is default if not set on command line."""
+        with patch.object(sys, 'argv', ['excewo']):
+            main()
+            self.assertEqual(self.app.main, 'default_extensible_celery_worker_app')
+
+    def test_app_set_name_cli(self):
+        """Check that the Celery application name is set to the one given on command line."""
+        celery_app_name = 'my_worker'
+        for cli_option in ('-n', '--app-name'):
+            with patch.object(sys, 'argv', ['excewo', cli_option, celery_app_name]), \
+                    self.subTest(msg='Check that the Celery application name is set to {} when '
+                                 'given with option `{}`.'.format(celery_app_name, cli_option)):
+                main()
+                self.assertEqual(self.app.main, celery_app_name)
+
+    def test_worker_args(self):
+        """Check that the Celery worker is called with arguments given on command line."""
+        for worker_args in ([], ['-E'], ['-C', '1', '-E'], ['-E', '--time-limit', '500']):
+            with patch.object(sys, 'argv', ['excewo', '-n', 'my_worker', '--'] + worker_args), \
+                    self.subTest(msg='Check that the Celery worker is called with `{}` '
+                                 'arguments.'.format(worker_args)):
+                main()
+                self.mock_app_worker_main.assert_called_with(argv=['excewo'] + worker_args)
 
 
 @pytest.fixture(scope='class')
