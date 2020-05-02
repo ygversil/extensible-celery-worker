@@ -5,7 +5,7 @@ extensible_celery_worker
     :target: https://pypi.python.org/pypi/extensible_celery_worker
     :alt: Latest PyPI version
 
-.. image:: https://travis-ci.com/github/ygversil/extensible-celery-worker.png
+.. image:: https://travis-ci.com/ygversil/extensible-celery-worker.svg?branch=master
    :target: https://travis-ci.com/github/ygversil/extensible-celery-worker
    :alt: Latest Travis CI build status
 
