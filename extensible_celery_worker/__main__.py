@@ -41,8 +41,8 @@ def _command_line_arguments():
     parser.add_argument('-n', '--app-name', help='Name that you give to the Celery application for '
                         'this worker. All tasks for this worker will be prefixed with this name',
                         dest='celery_app_name')
-    parser.add_argument('-a', '--app-config', help='Path to a configuration file for the Celery'
-                        'application (INI-style).', dest='cli_config_path')
+    parser.add_argument('-a', '--app-config', help='Path to a configuration file for '
+                        'extensible_celery_worker (INI-style).', dest='cli_config_path')
     parser.add_argument('-l', '--log-level', help='Log level. The worker process will also use '
                         'this log level (no need to specify `-l` again after `--`)',
                         choices=_LOG_LEVEL_MAP.values(), action=_StoreLogLevelAction)
