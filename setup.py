@@ -28,7 +28,9 @@ setup(
 
     packages=find_packages(exclude=('tests',)),
 
-    install_requires=[],
+    install_requires=[
+        'celery',
+    ],
 
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',

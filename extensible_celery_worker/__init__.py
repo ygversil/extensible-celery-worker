@@ -4,3 +4,9 @@ plugins"""
 __version__ = '0.1.0-dev1'
 __author__ = 'Yann Voté <ygversil@lilo.org>'
 __all__ = []
+
+
+from celery import Celery
+
+
+app = Celery('default_extensible_celery_worker_app')
