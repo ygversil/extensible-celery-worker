@@ -2,6 +2,8 @@
 
 """Main module for running extensible_celery_worker."""
 
+
+from contextlib import contextmanager
 import argparse
 import logging
 
@@ -46,15 +48,34 @@ def _command_line_arguments():
     return parser.parse_args()
 
 
+@contextmanager
+def _log_app(level):
+    """Context manager that initialize a basic logging system on startup and ensure it is shutdown
+    on exit."""
+    level = level or logging.WARNING
+    logging.basicConfig(
+        level=level,
+        format='[%(asctime)s: %(levelname)s/%(processName)s] %(message)s',
+    )
+    yield
+    logging.shutdown()
+
+
 def start_celery_worker():
     """Start the application, that is start the Celery worker."""
     cli_args = _command_line_arguments()
-    if cli_args.celery_app_name:
-        app.main = cli_args.celery_app_name
-    worker_args = ['excewo'] + cli_args.worker_args[1:]
-    if cli_args.log_level:
-        worker_args.extend(['-l', _LOG_LEVEL_MAP[cli_args.log_level]])
-    app.worker_main(argv=worker_args)
+    with _log_app(cli_args.log_level):
+        celery_app_name = cli_args.celery_app_name
+        if celery_app_name:
+            logging.debug('Setting Celery application name to "{}"'.format(celery_app_name))
+            app.main = celery_app_name
+        worker_args = ['excewo'] + cli_args.worker_args[1:]
+        if cli_args.log_level:
+            worker_args.extend(['-l', _LOG_LEVEL_MAP[cli_args.log_level]])
+        logging.debug('Running Celery worker with arguments: {}'.format(
+            ' '.join(worker_args[1:])
+        ))
+        app.worker_main(argv=worker_args)
 
 
 main = start_celery_worker
