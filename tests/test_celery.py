@@ -54,7 +54,7 @@ class CeleryAppCliInitTest(unittest.TestCase):
         self.app.add_defaults(DEFAULT_TEST_CONFIG)
         # Patch app.worker_main() so that a worker is not really started
         patcher = patch.object(app, 'worker_main')
-        self.app_worker_main = patcher.start()
+        self.mock_app_worker_main = patcher.start()
         self.addCleanup(patcher.stop)
 
     def test_app_default_name(self):
@@ -72,6 +72,15 @@ class CeleryAppCliInitTest(unittest.TestCase):
                                  'given with option `{}`.'.format(celery_app_name, cli_option)):
                 main()
                 self.assertEqual(self.app.main, celery_app_name)
+
+    def test_worker_args(self):
+        """Check that the Celery worker is called with arguments given on command line."""
+        for worker_args in ([], ['-E'], ['-C', '1', '-E'], ['-E', '--time-limit', '500']):
+            with patch.object(sys, 'argv', ['excewo', '-n', 'my_worker', '--'] + worker_args), \
+                    self.subTest(msg='Check that the Celery worker is called with `{}` '
+                                 'arguments.'.format(worker_args)):
+                main()
+                self.mock_app_worker_main.assert_called_with(argv=['excewo'] + worker_args)
 
 
 @pytest.fixture(scope='class')

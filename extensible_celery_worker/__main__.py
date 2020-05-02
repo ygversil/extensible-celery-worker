@@ -15,6 +15,9 @@ def _command_line_arguments():
     parser.add_argument('-n', '--app-name', help='Name that you give to the Celery application for '
                         'this worker. All tasks for this worker will be prefixed with this name',
                         dest='celery_app_name')
+    parser.add_argument('worker_args', help='All remaining arguments after a double dash (--) will '
+                        'be passed to the Celery worker. Run `celery worker --help` for details',
+                        nargs=argparse.REMAINDER)
     return parser.parse_args()
 
 
@@ -23,7 +26,7 @@ def start_celery_worker():
     cli_args = _command_line_arguments()
     if cli_args.celery_app_name:
         app.main = cli_args.celery_app_name
-    app.worker_main()
+    app.worker_main(argv=['excewo'] + cli_args.worker_args[1:])
 
 
 main = start_celery_worker
