@@ -7,7 +7,7 @@ import pathlib
 import sys
 import unittest
 
-from extensible_celery_worker import app
+from extensible_celery_worker import DEFAULT_CONFIG, app
 from extensible_celery_worker.__main__ import main
 
 from celery.contrib.testing.app import DEFAULT_TEST_CONFIG
@@ -133,6 +133,69 @@ class CeleryAppNameTest(unittest.TestCase):
                                         '-a', test_config_file_path.as_posix()]):
             main()
             self.assertEqual(self.app.main, cli_celery_app_name)
+
+
+class CeleryAppConfigTest(unittest.TestCase):
+    """Specific test for the Celery application config."""
+
+    def setUp(self):
+        self.app = app
+        self.app.main = 'default_extensible_celery_worker_app'
+        self.app.conf.update(DEFAULT_CONFIG)
+        # Patch app.worker_main() so that a worker is not really started
+        patcher = patch.object(app, 'worker_main')
+        self.mock_app_worker_main = patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_app_default_config(self):
+        """Check that the default configuration is used when no cli arg nor configuration file is
+        given."""
+        with patch.object(sys, 'argv', ['excewo']):
+            main()
+            for k, v in DEFAULT_CONFIG.items():
+                self.assertEqual(self.app.conf[k], v)
+
+    def test_app_config_path_from_cli(self):
+        """Check that Celery configuration is as expected when ``--config`` argument is given."""
+        with patch.object(sys, 'argv', ['excewo', '--config',
+                                        'extensible_celery_worker.examples.example2_celeryconfig']):
+            main()
+            self.assertEqual(self.app.conf['broker_url'], 'amqp://')
+            self.assertEqual(self.app.conf['result_backend'], 'redis://')
+            self.assertFalse(self.app.conf['task_ignore_result'])
+            self.assertTrue(self.app.conf['enable_utc'])
+            self.assertEqual(self.app.conf['timezone'], 'UTC')
+            self.assertFalse(self.app.conf['worker_send_task_events'])
+
+    def test_app_config_path_from_config_file(self):
+        """Check that Celery configuration is as expected when configuration file contains
+        ``celery_app_config`` setting."""
+        test_config_file_path = pathlib.Path(__file__).parent / 'data' / 'excewo.ini'
+        with patch.object(sys, 'argv', ['excewo', '-a', test_config_file_path.as_posix()]):
+            main()
+            self.assertEqual(self.app.conf['broker_url'],
+                             'amqp://excewo:password@rabbitmq.priv.example.org/excewo')
+            self.assertIsNone(self.app.conf['result_backend'])
+            self.assertTrue(self.app.conf['task_ignore_result'])
+            self.assertTrue(self.app.conf['enable_utc'])
+            self.assertEqual(self.app.conf['timezone'], 'Europe/Paris')
+            self.assertTrue(self.app.conf['worker_send_task_events'])
+
+    def test_app_config_path_from_cli_wins(self):
+        """Check that configuration path given by ``--config`` argument takes precedence on
+        ``celery_app_config`` setting in ``excewo`` configuration file."""
+        test_config_file_path = pathlib.Path(__file__).parent / 'data' / 'excewo.ini'
+        with patch.object(sys, 'argv', ['excewo',
+                                        '--config',
+                                        'extensible_celery_worker.examples.example2_celeryconfig',
+                                        '-a', test_config_file_path.as_posix()]):
+            main()
+            self.assertEqual(self.app.conf['broker_url'], 'amqp://')
+            self.assertEqual(self.app.conf['result_backend'], 'redis://')
+            self.assertFalse(self.app.conf['task_ignore_result'])
+            self.assertTrue(self.app.conf['enable_utc'])
+            self.assertEqual(self.app.conf['timezone'], 'UTC')
+            self.assertFalse(self.app.conf['worker_send_task_events'])
 
 
 @pytest.fixture(scope='class')
