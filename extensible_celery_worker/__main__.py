@@ -39,12 +39,12 @@ def _command_line_arguments():
     parser.add_argument('-n', '--app-name', help='Name that you give to the Celery application for '
                         'this worker. All tasks for this worker will be prefixed with this name',
                         dest='celery_app_name')
-    parser.add_argument('worker_args', help='All remaining arguments after a double dash (--) will '
-                        'be passed to the Celery worker. Run `celery worker --help` for details',
-                        nargs=argparse.REMAINDER)
     parser.add_argument('-l', '--log-level', help='Log level. The worker process will also use '
                         'this log level (no need to specify `-l` again after `--`)',
                         choices=_LOG_LEVEL_MAP.values(), action=_StoreLogLevelAction)
+    parser.add_argument('worker_args', help='All remaining arguments after a double dash (--) will '
+                        'be passed to the Celery worker. Run `celery worker --help` for details',
+                        nargs=argparse.REMAINDER)
     return parser.parse_args()
 
 
