@@ -29,8 +29,8 @@ class CeleryAppInitTest(unittest.TestCase):
     def test_app_config(self):
         """Check that the Celery application configuration is as expected."""
         for k, v in DEFAULT_TEST_CONFIG.items():
-            with self.subTest(msg=f'Check that Celery application configuration value for key {k} '
-                              'is as expected.'):
+            with self.subTest(msg='Check that Celery application configuration value for key {k} '
+                              'is as expected.'.format(k=k)):
                 self.assertEqual(self.app.conf[k], v)
 
     def test_worker_startup_info(self):
