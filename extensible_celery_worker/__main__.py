@@ -3,8 +3,30 @@
 """Main module for running extensible_celery_worker."""
 
 import argparse
+import logging
 
 from extensible_celery_worker import app
+
+
+_LOG_LEVEL_MAP = {
+    logging.DEBUG: 'DEBUG',
+    logging.INFO: 'INFO',
+    logging.WARNING: 'WARNING',
+    logging.ERROR: 'ERROR',
+    logging.CRITICAL: 'CRITICAL',
+}
+
+
+class _StoreLogLevelAction(argparse.Action):
+    """``argparse`` action storing an actual ``logging`` log level instead of a string."""
+
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        if nargs is not None:
+            raise ValueError('log-level can only be specified once')
+        super().__init__(option_strings, dest, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, getattr(logging, values.upper()))
 
 
 def _command_line_arguments():
@@ -18,6 +40,9 @@ def _command_line_arguments():
     parser.add_argument('worker_args', help='All remaining arguments after a double dash (--) will '
                         'be passed to the Celery worker. Run `celery worker --help` for details',
                         nargs=argparse.REMAINDER)
+    parser.add_argument('-l', '--log-level', help='Log level. The worker process will also use '
+                        'this log level (no need to specify `-l` again after `--`)',
+                        choices=_LOG_LEVEL_MAP.values(), action=_StoreLogLevelAction)
     return parser.parse_args()
 
 
@@ -26,7 +51,10 @@ def start_celery_worker():
     cli_args = _command_line_arguments()
     if cli_args.celery_app_name:
         app.main = cli_args.celery_app_name
-    app.worker_main(argv=['excewo'] + cli_args.worker_args[1:])
+    worker_args = ['excewo'] + cli_args.worker_args[1:]
+    if cli_args.log_level:
+        worker_args.extend(['-l', _LOG_LEVEL_MAP[cli_args.log_level]])
+    app.worker_main(argv=worker_args)
 
 
 main = start_celery_worker

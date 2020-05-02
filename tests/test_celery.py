@@ -75,12 +75,19 @@ class CeleryAppCliInitTest(unittest.TestCase):
 
     def test_worker_args(self):
         """Check that the Celery worker is called with arguments given on command line."""
-        for worker_args in ([], ['-E'], ['-C', '1', '-E'], ['-E', '--time-limit', '500']):
+        for worker_args in ([], ['-E'], ['-C', '1', '-E'], ['-E', '--time-limit', '500'],
+                            ['-E', '-l', 'INFO']):
             with patch.object(sys, 'argv', ['excewo', '-n', 'my_worker', '--'] + worker_args), \
                     self.subTest(msg='Check that the Celery worker is called with `{}` '
                                  'arguments.'.format(worker_args)):
                 main()
                 self.mock_app_worker_main.assert_called_with(argv=['excewo'] + worker_args)
+
+    def test_worker_args_with_log_level(self):
+        """Check that the log level cli arg is passed to the Celery."""
+        with patch.object(sys, 'argv', ['excewo', '-n', 'my_worker', '-l', 'DEBUG', '--', '-E']):
+            main()
+            self.mock_app_worker_main.assert_called_with(argv=['excewo', '-E', '-l', 'DEBUG'])
 
 
 @pytest.fixture(scope='class')
