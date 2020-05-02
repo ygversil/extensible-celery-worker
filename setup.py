@@ -32,6 +32,10 @@ setup(
         'celery',
     ],
 
+    entry_points={
+        'console_scripts': ['excewo = extensible_celery_worker.__main__:main'],
+    },
+
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'License :: OSI Approved :: MIT License',
