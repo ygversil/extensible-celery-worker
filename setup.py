@@ -32,6 +32,10 @@ setup(
         'celery',
     ],
 
+    data_files=[
+        ('examples', ['excewo.ini.example'])
+    ],
+
     entry_points={
         'console_scripts': ['excewo = extensible_celery_worker.__main__:main'],
     },
