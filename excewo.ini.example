@@ -1,2 +1,3 @@
 [excewo]
 celery_app_name = my_custom_worker
+celery_app_config = celeryconfig.py
