@@ -30,6 +30,7 @@ setup(
 
     install_requires=[
         'celery',
+        'stevedore',
     ],
 
     data_files=[
@@ -38,6 +39,9 @@ setup(
 
     entry_points={
         'console_scripts': ['excewo = extensible_celery_worker.__main__:main'],
+        'excewo.tasks': [
+            'examples = extensible_celery_worker.examples.tasks',
+        ],
     },
 
     classifiers=[

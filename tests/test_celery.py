@@ -198,6 +198,27 @@ class CeleryAppConfigTest(unittest.TestCase):
             self.assertFalse(self.app.conf['worker_send_task_events'])
 
 
+class CeleryAppRegisteredTasksTest(unittest.TestCase):
+    """Test the Celery application for registered tasks."""
+
+    def setUp(self):
+        self.app = app
+        self.app.conf.update(DEFAULT_CONFIG)
+        # Patch app.worker_main() so that a worker is not really started
+        patcher = patch.object(app, 'worker_main')
+        self.mock_app_worker_main = patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_registered_example_tasks(self):
+        """Check that the example tasks are registered with the Celery application."""
+        with patch.object(sys, 'argv', ['excewo']):
+            main()
+            for task_name in ('always_true',):
+                task_fullname = 'default_extensible_celery_worker_app.examples.{}'.format(task_name)
+                with self.subTest(msg='Check that task "{}" is registered'.format(task_fullname)):
+                    self.assertIn(task_fullname, app.tasks)
+
+
 @pytest.fixture(scope='class')
 def start_worker(request):
     with contextlib.ExitStack() as context_managers:

@@ -6,7 +6,7 @@ __author__ = 'Yann Voté <ygversil@lilo.org>'
 __all__ = []
 
 
-from celery import Celery
+from extensible_celery_worker.celery import ExtensibleCeleryWorkerCelery as Celery
 
 
 DEFAULT_CONFIG = {

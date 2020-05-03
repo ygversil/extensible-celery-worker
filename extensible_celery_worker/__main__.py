@@ -8,6 +8,8 @@ import argparse
 import configparser
 import logging
 
+from stevedore import extension
+
 from extensible_celery_worker import DEFAULT_CONFIG, app
 from extensible_celery_worker.config_paths import config_paths
 
@@ -83,6 +85,15 @@ def _log_app(level):
     logging.shutdown()
 
 
+def _register_celery_app_tasks():
+    """Register all tasks found in installed plugins."""
+    plugin_mgr = extension.ExtensionManager(namespace='excewo.tasks')
+    installed_task_plugins = plugin_mgr.list_entry_points()
+    logging.info('Found task plugins: {}'.format(
+        ', '.join(plugin.name for plugin in installed_task_plugins)
+    ))
+
+
 def _update_celery_app_config(celery_app, config_path):
     """Update the given celery application configuration with the given configuration file."""
     celery_app.add_defaults(DEFAULT_CONFIG)
@@ -106,6 +117,7 @@ def start_celery_worker():
             logging.debug('Reading Celery application configuration from '
                           '{}'.format(celery_app_config))
             _update_celery_app_config(app, celery_app_config)
+        _register_celery_app_tasks()
         worker_args = ['excewo'] + cli_args.worker_args[1:]
         if cli_args.log_level:
             worker_args.extend(['-l', _LOG_LEVEL_MAP[cli_args.log_level]])
