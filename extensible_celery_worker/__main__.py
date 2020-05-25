@@ -94,13 +94,6 @@ def _register_celery_app_tasks():
     ))
 
 
-def _update_celery_app_config(celery_app, config_path):
-    """Update the given celery application configuration with the given configuration file."""
-    celery_app.add_defaults(DEFAULT_CONFIG)
-    celery_app.config_from_object(config_path)
-    logging.debug('Final Celery application configuration is: {}'.format(celery_app.conf))
-
-
 def start_celery_worker():
     """Start the application, that is start the Celery worker."""
     cli_args = _command_line_arguments()
@@ -111,12 +104,23 @@ def start_celery_worker():
         if celery_app_name:
             logging.debug('Setting Celery application name to "{}"'.format(celery_app_name))
             app.main = celery_app_name
+        # Set config
+        app.add_defaults(DEFAULT_CONFIG)
+        # Celery config mess: need to access config before calling app.config_from_object()
+        logging.debug('Added default configuration for Celery application {}'.format(
+            ', '.join('{}={}'.format(k, app.conf[k]) for k in DEFAULT_CONFIG.keys())
+        ))
         celery_app_config = (cli_args.celery_app_config or
                              config.get('excewo', 'celery_app_config', fallback=None))
         if celery_app_config:
             logging.debug('Reading Celery application configuration from '
                           '{}'.format(celery_app_config))
-            _update_celery_app_config(app, celery_app_config)
+            app.config_from_object(celery_app_config, force=True)
+        for section in config:
+            if section not in ('DEFAULT', 'excewo'):
+                app.conf[section] = dict(config.items(section=section))
+        app.conf.update(config)
+        logging.debug('Final Celery application configuration is: {}'.format(app.conf))
         _register_celery_app_tasks()
         worker_args = ['excewo'] + cli_args.worker_args[1:]
         if cli_args.log_level:
