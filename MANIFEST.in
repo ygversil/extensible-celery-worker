@@ -1,1 +1,4 @@
 include LICENSE
+include excewo.ini.example
+include tests/*
+include tests/data/*
