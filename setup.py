@@ -15,7 +15,7 @@ def read(filename):
 
 setup(
     name="extensible_celery_worker",
-    version="0.1.0-dev5",
+    version="0.1.0-dev6",
     url="https://github.com/ygversil/extensible-celery-worker",
     license='MIT',
 
@@ -32,13 +32,21 @@ setup(
         'celery',
         'stevedore',
     ],
+    extra_require={
+        'flower': [
+            'flower',
+        ],
+    },
 
     data_files=[
         ('examples', ['excewo.ini.example'])
     ],
 
     entry_points={
-        'console_scripts': ['excewo = extensible_celery_worker.__main__:main'],
+        'console_scripts': [
+            'excewo = extensible_celery_worker.__main__:main',
+            'excewo-flower = extensible_celery_worker.flower:main',
+        ],
         'excewo.tasks': [
             'examples = extensible_celery_worker.examples.tasks',
         ],
