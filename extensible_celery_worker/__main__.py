@@ -4,10 +4,13 @@
 
 
 from contextlib import contextmanager
+from functools import partial
 import argparse
 import configparser
 import logging
 
+
+from flower.command import FlowerCommand
 from stevedore import extension
 
 from extensible_celery_worker import DEFAULT_CONFIG, app
@@ -94,7 +97,7 @@ def _register_celery_app_tasks():
     ))
 
 
-def start_celery_worker():
+def start_daemon(daemon='worker'):
     """Start the application, that is start the Celery worker."""
     cli_args = _command_line_arguments()
     with _log_app(cli_args.log_level), \
@@ -128,10 +131,14 @@ def start_celery_worker():
         logging.debug('Running Celery worker with arguments: {}'.format(
             ' '.join(worker_args[1:])
         ))
-        app.worker_main(argv=worker_args)
+        if daemon == 'worker':
+            app.worker_main(argv=worker_args)
+        elif daemon == 'flower':
+            flower = FlowerCommand(app=app)
+            flower.execute_from_commandline()
 
 
-main = start_celery_worker
+main = partial(start_daemon, 'worker')
 
 
 if __name__ == '__main__':
