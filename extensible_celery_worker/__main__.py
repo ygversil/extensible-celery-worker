@@ -105,7 +105,7 @@ def start_daemon(daemon='worker'):
         celery_app_name = (cli_args.celery_app_name or
                            config.get('excewo', 'celery_app_name', fallback=None))
         if celery_app_name:
-            logging.debug('Setting Celery application name to "{}"'.format(celery_app_name))
+            logging.info('Setting Celery application name to "{}"'.format(celery_app_name))
             app.main = celery_app_name
         # Set config
         app.add_defaults(DEFAULT_CONFIG)
