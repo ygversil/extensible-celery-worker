@@ -1,12 +1,13 @@
 """extensible_celery_worker - Python Celery worker whose registered task list can be extended with
 plugins"""
 
+
+from extensible_celery_worker.excewo import ExtensibleCeleryWorkerCelery as Celery
+
+
 __version__ = '0.2.0-dev1'
 __author__ = 'Yann Voté <ygversil@lilo.org>'
 __all__ = []
-
-
-from extensible_celery_worker.celery import ExtensibleCeleryWorkerCelery as Celery
 
 
 DEFAULT_CONFIG = {

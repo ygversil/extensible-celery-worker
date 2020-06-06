@@ -97,13 +97,12 @@ def _register_celery_app_tasks():
     ))
 
 
-def start_daemon(daemon='worker'):
-    """Start the application, that is start the Celery worker."""
-    cli_args = _command_line_arguments()
-    with _log_app(cli_args.log_level), \
-            _celery_app_config(cli_args.cli_config_path) as config:
-        celery_app_name = (cli_args.celery_app_name or
-                           config.get('excewo', 'celery_app_name', fallback=None))
+@contextmanager
+def set_up_worker(log_level=None, excewo_config_path=None, app_name=None, celery_app_config=None):
+    """Context manager that set up the Celery worker with correct name, config and tasks."""
+    with _log_app(log_level), \
+            _celery_app_config(excewo_config_path) as config:
+        celery_app_name = (app_name or config.get('excewo', 'celery_app_name', fallback=None))
         if celery_app_name:
             logging.info('Setting Celery application name to "{}"'.format(celery_app_name))
             app.main = celery_app_name
@@ -113,7 +112,7 @@ def start_daemon(daemon='worker'):
         logging.debug('Added default configuration for Celery application {}'.format(
             ', '.join('{}={}'.format(k, app.conf[k]) for k in DEFAULT_CONFIG.keys())
         ))
-        celery_app_config = (cli_args.celery_app_config or
+        celery_app_config = (celery_app_config or
                              config.get('excewo', 'celery_app_config', fallback=None))
         if celery_app_config:
             logging.debug('Reading Celery application configuration from '
@@ -122,9 +121,17 @@ def start_daemon(daemon='worker'):
         for section in config:
             if section not in ('DEFAULT', 'excewo'):
                 app.conf[section] = dict(config.items(section=section))
-        app.conf.update(config)
         logging.debug('Final Celery application configuration is: {}'.format(app.conf))
         _register_celery_app_tasks()
+        yield
+
+
+def start_daemon(daemon='worker'):
+    """Start the application, that is start the Celery worker."""
+    cli_args = _command_line_arguments()
+    with set_up_worker(log_level=cli_args.log_level, excewo_config_path=cli_args.cli_config_path,
+                       app_name=cli_args.celery_app_name,
+                       celery_app_config=cli_args.celery_app_config):
         worker_args = ['excewo'] + cli_args.worker_args[1:]
         if cli_args.log_level:
             worker_args.extend(['-l', _LOG_LEVEL_MAP[cli_args.log_level]])
