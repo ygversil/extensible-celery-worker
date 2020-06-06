@@ -1,20 +1,9 @@
-"""Custom Celery class for extensible_celery_worker."""
+"""extensible celery worker module to be used when launching directly from Celery."""
 
 
-from celery import Celery
+from extensible_celery_worker import app  # noqa
+from extensible_celery_worker.__main__ import set_up_worker
 
 
-class ExtensibleCeleryWorkerCelery(Celery):
-    """Custom Celery class to generate task names without ``.tasks.`` and with application name
-    as prefix."""
-
-    def gen_task_name(self, name, module):
-        modules = module.split('.')
-        # Remove 'tasks' at the end
-        if modules[-1] == 'tasks':
-            modules.pop()
-        # Replace 'extensible_celery_worker' at the beginning with the app name
-        if modules[0] == 'extensible_celery_worker':
-            modules.pop(0)
-        modules.insert(0, self.main)
-        return super().gen_task_name(name, '.'.join(modules))
+with set_up_worker():
+    pass
