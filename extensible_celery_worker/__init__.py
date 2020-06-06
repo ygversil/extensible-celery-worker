@@ -5,7 +5,7 @@ plugins"""
 from extensible_celery_worker.excewo import ExtensibleCeleryWorkerCelery as Celery
 
 
-__version__ = '0.2.0-dev1'
+__version__ = '0.2.0'
 __author__ = 'Yann Voté <ygversil@lilo.org>'
 __all__ = []
 
