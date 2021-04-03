@@ -35,5 +35,8 @@ nosetests.xml
 .project
 .pydevproject
 
+# Config
+*.ini
+
 # Editors
 .lvimrc

@@ -1,4 +1,7 @@
 include LICENSE
 include excewo.ini.example
+include Pipfile
+include Pipfile.lock
+include .bumpversion.cfg
 include tests/*
 include tests/data/*
