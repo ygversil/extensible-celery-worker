@@ -4,7 +4,6 @@
 
 
 from contextlib import contextmanager
-from functools import partial
 import argparse
 import configparser
 import logging
@@ -57,9 +56,15 @@ def _command_line_arguments():
     parser.add_argument('-l', '--log-level', help='Log level. The worker process will also use '
                         'this log level (no need to specify `-l` again after `--`)',
                         choices=_LOG_LEVEL_MAP.values(), action=_StoreLogLevelAction)
-    parser.add_argument('worker_args', help='All remaining arguments after a double dash (--) will '
-                        'be passed to the Celery worker. Run `celery worker --help` for details',
-                        nargs=argparse.REMAINDER)
+    subparsers = parser.add_subparsers(title='Commands', dest='command', help='Available commands')
+    subparsers.required = True
+    worker_parser = subparsers.add_parser('worker', help='Start worker')
+    worker_parser.add_argument('worker_args', help='All remaining arguments after a double dash '
+                               '(--) will be passed to the Celery worker. Run `celery worker '
+                               '--help` for details',
+                               nargs=argparse.REMAINDER)
+    if FlowerCommand is not None:
+        subparsers.add_parser('flower', help='Start flower')
     return parser.parse_args()
 
 
@@ -129,26 +134,42 @@ def set_up_worker(log_level=None, excewo_config_path=None, app_name=None, celery
         yield
 
 
-def start_daemon(daemon='worker'):
-    """Start the application, that is start the Celery worker."""
+def start_daemon():
+    """Start the right daemon, depending on command line argments."""
     cli_args = _command_line_arguments()
-    with set_up_worker(log_level=cli_args.log_level, excewo_config_path=cli_args.cli_config_path,
-                       app_name=cli_args.celery_app_name,
-                       celery_app_config=cli_args.celery_app_config):
-        worker_args = ['excewo'] + cli_args.worker_args[1:]
-        if cli_args.log_level:
-            worker_args.extend(['-l', _LOG_LEVEL_MAP[cli_args.log_level]])
+    command = cli_args.command
+    logging.debug('Launching {}'.format(command))
+    if command == 'worker':
+        start_worker(cli_args.log_level, cli_args.cli_config_path, cli_args.celery_app_name,
+                     cli_args.celery_app_config, cli_args.worker_args[1:])
+    elif command == 'flower':
+        start_flower(cli_args.log_level, cli_args.cli_config_path, cli_args.celery_app_name,
+                     cli_args.celery_app_config)
+
+
+def start_worker(log_level, excewo_config_path, app_name, celery_app_config, worker_args):
+    """Start the Celery worker."""
+    with set_up_worker(log_level=log_level, excewo_config_path=excewo_config_path,
+                       app_name=app_name, celery_app_config=celery_app_config):
+        worker_args = ['excewo'] + worker_args
+        if log_level:
+            worker_args.extend(['-l', _LOG_LEVEL_MAP[log_level]])
         logging.debug('Running Celery worker with arguments: {}'.format(
             ' '.join(worker_args[1:])
         ))
-        if daemon == 'worker':
-            app.worker_main(argv=worker_args)
-        elif daemon == 'flower':
-            flower = FlowerCommand(app=app)
-            flower.execute_from_commandline()
+        app.worker_main(argv=worker_args)
 
 
-main = partial(start_daemon, 'worker')
+def start_flower(log_level, excewo_config_path, app_name, celery_app_config):
+    """Start the flower daemon."""
+    with set_up_worker(log_level=log_level, excewo_config_path=excewo_config_path,
+                       app_name=app_name, celery_app_config=celery_app_config):
+        logging.debug('Running Celery Flower')
+        flower = FlowerCommand(app=app)
+        flower.execute_from_commandline()
+
+
+main = start_daemon
 
 
 if __name__ == '__main__':
