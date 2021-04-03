@@ -15,7 +15,7 @@ def read(filename):
 
 setup(
     name="extensible_celery_worker",
-    version="0.2.0",
+    version="0.2.1",
     url="https://github.com/ygversil/extensible-celery-worker",
     license='MIT',
 
@@ -29,7 +29,7 @@ setup(
     packages=find_packages(exclude=('tests',)),
 
     install_requires=[
-        'celery',
+        'celery<5.0',
         'stevedore',
     ],
     extra_require={
