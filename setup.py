@@ -34,7 +34,7 @@ setup(
         'celery<5.0',
         'stevedore',
     ],
-    extra_require={
+    extras_require={
         'flower': [
             'flower',
         ],
