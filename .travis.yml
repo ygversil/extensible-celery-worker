@@ -2,10 +2,10 @@
 language: python
 # What Python versions to test against
 python:
+  - 3.9
   - 3.8
   - 3.7
   - 3.6
-  - 3.5
 # Command to install test programs
 install: pip install -U tox-travis
 # Command to run tests
