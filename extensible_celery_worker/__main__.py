@@ -10,7 +10,10 @@ import configparser
 import logging
 
 
-from flower.command import FlowerCommand
+try:
+    from flower.command import FlowerCommand
+except ImportError:
+    FlowerCommand = None
 from stevedore import extension
 
 from extensible_celery_worker import DEFAULT_CONFIG, app
