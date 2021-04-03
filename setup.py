@@ -29,7 +29,7 @@ setup(
     packages=find_packages(exclude=('tests',)),
 
     install_requires=[
-        'celery',
+        'celery<5.0',
         'stevedore',
     ],
     extra_require={
