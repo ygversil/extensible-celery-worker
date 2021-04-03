@@ -47,7 +47,6 @@ setup(
     entry_points={
         'console_scripts': [
             'excewo = extensible_celery_worker.__main__:main',
-            'excewo-flower = extensible_celery_worker.flower:main',
         ],
         'excewo.tasks': [
             'examples = extensible_celery_worker.examples.tasks',
