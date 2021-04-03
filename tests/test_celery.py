@@ -58,9 +58,21 @@ class CeleryAppCliInitTest(unittest.TestCase):
         self.mock_app_worker_main = patcher.start()
         self.addCleanup(patcher.stop)
 
+    def test_no_command(self):
+        """Check that the Celery application does not start if no command is given."""
+        with patch.object(sys, 'argv', ['excewo']), \
+                self.assertRaises(SystemExit):
+            main()
+
+    def test_unknown_command(self):
+        """Check that the Celery application does not start if an unknown command is given."""
+        with patch.object(sys, 'argv', ['excewo', 'foo']), \
+                self.assertRaises(SystemExit):
+            main()
+
     def test_app_default_name(self):
         """Check that the Celery application name is default if not set on command line."""
-        with patch.object(sys, 'argv', ['excewo']):
+        with patch.object(sys, 'argv', ['excewo', 'worker']):
             main()
             self.assertEqual(self.app.main, 'default_extensible_celery_worker_app')
 
@@ -68,7 +80,7 @@ class CeleryAppCliInitTest(unittest.TestCase):
         """Check that the Celery application name is set to the one given on command line."""
         celery_app_name = 'my_worker'
         for cli_option in ('-n', '--app-name'):
-            with patch.object(sys, 'argv', ['excewo', cli_option, celery_app_name]), \
+            with patch.object(sys, 'argv', ['excewo', cli_option, celery_app_name, 'worker']), \
                     self.subTest(msg='Check that the Celery application name is set to {} when '
                                  'given with option `{}`.'.format(celery_app_name, cli_option)):
                 main()
@@ -78,7 +90,8 @@ class CeleryAppCliInitTest(unittest.TestCase):
         """Check that the Celery worker is called with arguments given on command line."""
         for worker_args in ([], ['-E'], ['-C', '1', '-E'], ['-E', '--time-limit', '500'],
                             ['-E', '-l', 'INFO']):
-            with patch.object(sys, 'argv', ['excewo', '-n', 'my_worker', '--'] + worker_args), \
+            with patch.object(sys, 'argv', ['excewo', '-n', 'my_worker', 'worker', '--']
+                              + worker_args), \
                     self.subTest(msg='Check that the Celery worker is called with `{}` '
                                  'arguments.'.format(worker_args)):
                 main()
@@ -86,7 +99,8 @@ class CeleryAppCliInitTest(unittest.TestCase):
 
     def test_worker_args_with_log_level(self):
         """Check that the log level cli arg is passed to the Celery."""
-        with patch.object(sys, 'argv', ['excewo', '-n', 'my_worker', '-l', 'DEBUG', '--', '-E']):
+        with patch.object(sys, 'argv', ['excewo', '-n', 'my_worker', '-l', 'DEBUG', 'worker', '--',
+                                        '-E']):
             main()
             self.mock_app_worker_main.assert_called_with(argv=['excewo', '-E', '-l', 'DEBUG'])
 
@@ -105,21 +119,22 @@ class CeleryAppNameTest(unittest.TestCase):
 
     def test_app_default_name(self):
         """Check that the default name is used when no cli arg nor configuration file is given."""
-        with patch.object(sys, 'argv', ['excewo']):
+        with patch.object(sys, 'argv', ['excewo', 'worker']):
             main()
             self.assertEqual(self.app.main, 'default_extensible_celery_worker_app')
 
     def test_app_name_from_cli(self):
         """Check that the application name is set to what is given by ``-n`` argument."""
         cli_celery_app_name = 'my_worker'
-        with patch.object(sys, 'argv', ['excewo', '-n', cli_celery_app_name]):
+        with patch.object(sys, 'argv', ['excewo', '-n', cli_celery_app_name, 'worker']):
             main()
             self.assertEqual(self.app.main, cli_celery_app_name)
 
     def test_app_name_from_config(self):
         """Check that the application name is set to what is given by configuration file."""
         test_config_file_path = pathlib.Path(__file__).parent / 'data' / 'excewo.ini'
-        with patch.object(sys, 'argv', ['excewo', '-a', test_config_file_path.as_posix()]):
+        with patch.object(sys, 'argv', ['excewo', '-a', test_config_file_path.as_posix(),
+                                        'worker']):
             main()
             self.assertEqual(self.app.main, 'test_worker')
 
@@ -130,7 +145,8 @@ class CeleryAppNameTest(unittest.TestCase):
         test_config_file_path = pathlib.Path(__file__).parent / 'data' / 'excewo.ini'
         with patch.object(sys, 'argv', ['excewo',
                                         '-n', cli_celery_app_name,
-                                        '-a', test_config_file_path.as_posix()]):
+                                        '-a', test_config_file_path.as_posix(),
+                                        'worker']):
             main()
             self.assertEqual(self.app.main, cli_celery_app_name)
 
@@ -150,7 +166,7 @@ class CeleryAppConfigTest(unittest.TestCase):
     def test_app_default_config(self):
         """Check that the default configuration is used when no cli arg nor configuration file is
         given."""
-        with patch.object(sys, 'argv', ['excewo']):
+        with patch.object(sys, 'argv', ['excewo', 'worker']):
             main()
             for k, v in DEFAULT_CONFIG.items():
                 self.assertEqual(self.app.conf[k], v)
@@ -158,7 +174,8 @@ class CeleryAppConfigTest(unittest.TestCase):
     def test_app_config_path_from_cli(self):
         """Check that Celery configuration is as expected when ``--config`` argument is given."""
         with patch.object(sys, 'argv', ['excewo', '--config',
-                                        'extensible_celery_worker.examples.example2_celeryconfig']):
+                                        'extensible_celery_worker.examples.example2_celeryconfig',
+                                        'worker']):
             main()
             self.assertEqual(self.app.conf['broker_url'], 'amqp://')
             self.assertEqual(self.app.conf['result_backend'], 'redis://')
@@ -171,7 +188,8 @@ class CeleryAppConfigTest(unittest.TestCase):
         """Check that Celery configuration is as expected when configuration file contains
         ``celery_app_config`` setting."""
         test_config_file_path = pathlib.Path(__file__).parent / 'data' / 'excewo.ini'
-        with patch.object(sys, 'argv', ['excewo', '-a', test_config_file_path.as_posix()]):
+        with patch.object(sys, 'argv', ['excewo', '-a', test_config_file_path.as_posix(),
+                                        'worker']):
             main()
             self.assertEqual(self.app.conf['broker_url'],
                              'amqp://excewo:password@rabbitmq.priv.example.org/excewo')
@@ -188,7 +206,8 @@ class CeleryAppConfigTest(unittest.TestCase):
         with patch.object(sys, 'argv', ['excewo',
                                         '--config',
                                         'extensible_celery_worker.examples.example2_celeryconfig',
-                                        '-a', test_config_file_path.as_posix()]):
+                                        '-a', test_config_file_path.as_posix(),
+                                        'worker']):
             main()
             self.assertEqual(self.app.conf['broker_url'], 'amqp://')
             self.assertEqual(self.app.conf['result_backend'], 'redis://')
@@ -211,7 +230,7 @@ class CeleryAppRegisteredTasksTest(unittest.TestCase):
 
     def test_registered_example_tasks(self):
         """Check that the example tasks are registered with the Celery application."""
-        with patch.object(sys, 'argv', ['excewo']):
+        with patch.object(sys, 'argv', ['excewo', 'worker']):
             main()
             for task_name in ('always_true',):
                 task_fullname = 'default_extensible_celery_worker_app.examples.{}'.format(task_name)
